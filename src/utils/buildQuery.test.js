@@ -11,25 +11,34 @@
 import { describe, test, expect } from 'vitest';
 import { buildQuery } from './buildQuery.js';
 
-// A base filters object with everything blank/empty — represents "no filters set".
-// Individual tests spread this and override only the field they're testing,
-// so each test is clear about what it's actually exercising.
+// BASE is the test fixture — a neutral "nothing active" state used to test one
+// filter at a time. planeswalker is set to true here so that tests for OTHER
+// filters don't get -t:planeswalker noise in their expected strings.
+//
+// The REAL default (planeswalker: false → excludes walkers) is tested explicitly
+// in the planeswalker section below.
 const BASE = {
   colours: [],
-  colourMode: 'within', // default mode — uses id<=
+  colourMode: 'within',
   numColours: null,
   creatureType: '',
   keywords: [],
   budget: '',
-  planeswalker: false,
+  planeswalker: true,   // neutral for test isolation — real default is false
   partnerOnly: false,
 };
 
 // ─── BASELINE ─────────────────────────────────────────────────────────────────
 
 describe('baseline', () => {
-  test('no filters → returns only is:commander', () => {
+  test('no filters active → returns only is:commander', () => {
     expect(buildQuery(BASE)).toBe('is:commander');
+  });
+
+  test('real-world defaults (planeswalker: false) → is:commander -t:planeswalker', () => {
+    // This is what DEFAULT_FILTERS in App.jsx actually produces on first load.
+    // Planeswalkers are excluded unless the user opts in via the toggle.
+    expect(buildQuery({ ...BASE, planeswalker: false })).toBe('is:commander -t:planeswalker');
   });
 });
 
@@ -110,6 +119,103 @@ describe('creature type', () => {
   });
 });
 
+// ─── NUMBER OF COLOURS ────────────────────────────────────────────────────────
+
+describe('number of colours', () => {
+  test('numColours 1 → c=1', () => {
+    expect(buildQuery({ ...BASE, numColours: 1 })).toBe('is:commander c=1');
+  });
+
+  test('numColours 3 → c=3', () => {
+    expect(buildQuery({ ...BASE, numColours: 3 })).toBe('is:commander c=3');
+  });
+
+  test('numColours 5 → c=5', () => {
+    expect(buildQuery({ ...BASE, numColours: 5 })).toBe('is:commander c=5');
+  });
+
+  test('numColours null → no c= token', () => {
+    expect(buildQuery({ ...BASE, numColours: null })).toBe('is:commander');
+  });
+
+  test('numColours combined with colour identity → both tokens present', () => {
+    // Both filters are independent — buildQuery outputs both and lets Scryfall handle it
+    expect(buildQuery({ ...BASE, colours: ['B', 'R'], numColours: 2 }))
+      .toBe('is:commander id<=BR c=2');
+  });
+});
+
+// ─── KEYWORDS ─────────────────────────────────────────────────────────────────
+
+describe('keywords', () => {
+  test('single keyword → keyword:flying', () => {
+    expect(buildQuery({ ...BASE, keywords: ['Flying'] })).toBe('is:commander keyword:flying');
+  });
+
+  test('multiple keywords → one token each', () => {
+    expect(buildQuery({ ...BASE, keywords: ['Flying', 'Haste'] }))
+      .toBe('is:commander keyword:flying keyword:haste');
+  });
+
+  test('keywords are lowercased', () => {
+    expect(buildQuery({ ...BASE, keywords: ['TRAMPLE'] })).toBe('is:commander keyword:trample');
+  });
+
+  test('empty keywords array → no keyword tokens', () => {
+    expect(buildQuery({ ...BASE, keywords: [] })).toBe('is:commander');
+  });
+});
+
+// ─── BUDGET ───────────────────────────────────────────────────────────────────
+
+describe('budget', () => {
+  test('budget "5" → usd<5', () => {
+    expect(buildQuery({ ...BASE, budget: '5' })).toBe('is:commander usd<5');
+  });
+
+  test('budget "10" → usd<10', () => {
+    expect(buildQuery({ ...BASE, budget: '10' })).toBe('is:commander usd<10');
+  });
+
+  test('budget "25" → usd<25', () => {
+    expect(buildQuery({ ...BASE, budget: '25' })).toBe('is:commander usd<25');
+  });
+
+  test('budget empty string → no usd token', () => {
+    expect(buildQuery({ ...BASE, budget: '' })).toBe('is:commander');
+  });
+});
+
+// ─── PLANESWALKER TOGGLE ──────────────────────────────────────────────────────
+
+describe('planeswalker toggle', () => {
+  test('planeswalker false → adds -t:planeswalker to exclude them', () => {
+    // is:commander includes planeswalker commanders — we exclude them when toggle is off
+    expect(buildQuery({ ...BASE, planeswalker: false })).toBe('is:commander -t:planeswalker');
+  });
+
+  test('planeswalker true → no extra token (planeswalkers included)', () => {
+    expect(buildQuery({ ...BASE, planeswalker: true })).toBe('is:commander');
+  });
+});
+
+// ─── PARTNER TOGGLE ───────────────────────────────────────────────────────────
+
+describe('partner toggle', () => {
+  test('partnerOnly false → no keyword:partner token', () => {
+    expect(buildQuery({ ...BASE, partnerOnly: false })).toBe('is:commander');
+  });
+
+  test('partnerOnly true → adds keyword:partner', () => {
+    expect(buildQuery({ ...BASE, partnerOnly: true })).toBe('is:commander keyword:partner');
+  });
+
+  test('partnerOnly true + planeswalker false → partner before planeswalker exclusion', () => {
+    expect(buildQuery({ ...BASE, partnerOnly: true, planeswalker: false }))
+      .toBe('is:commander keyword:partner -t:planeswalker');
+  });
+});
+
 // ─── COMBINED ─────────────────────────────────────────────────────────────────
 
 describe('combined filters', () => {
@@ -129,5 +235,24 @@ describe('combined filters', () => {
     expect(
       buildQuery({ ...BASE, colours: ['W', 'U', 'B', 'R', 'G'], creatureType: 'Wizard' })
     ).toBe('is:commander id<=WUBRG t:wizard');
+  });
+
+  test('colour + keyword + budget → all three tokens', () => {
+    expect(
+      buildQuery({ ...BASE, colours: ['B'], keywords: ['Flying'], budget: '10' })
+    ).toBe('is:commander id<=B keyword:flying usd<10');
+  });
+
+  test('all filters active (walkers excluded) → full query', () => {
+    expect(buildQuery({
+      colours: ['B', 'R'],
+      colourMode: 'within',
+      numColours: 2,
+      creatureType: 'Vampire',
+      keywords: ['Flying'],
+      budget: '25',
+      planeswalker: false,
+      partnerOnly: false,
+    })).toBe('is:commander id<=BR c=2 t:vampire keyword:flying usd<25 -t:planeswalker');
   });
 });

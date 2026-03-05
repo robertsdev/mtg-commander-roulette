@@ -69,11 +69,53 @@ export function buildQuery(filters) {
     tokens.push(`${operator}${colourString}`);
   }
 
+  // --- NUMBER OF COLOURS FILTER ---
+  // Scryfall's c=N token filters by how many distinct colours a card has in its mana cost.
+  // c=1 = mono, c=2 = two-colour, etc. Only added when a specific count is chosen.
+  if (filters.numColours !== null && filters.numColours !== undefined) {
+    tokens.push(`c=${filters.numColours}`);
+  }
+
   // --- CREATURE TYPE FILTER ---
   // Only add this token if the user typed a creature type.
   // .trim() handles accidental whitespace. Scryfall handles capitalisation on its end.
   if (filters.creatureType && filters.creatureType.trim() !== '') {
     tokens.push(`t:${filters.creatureType.trim().toLowerCase()}`);
+  }
+
+  // --- KEYWORDS FILTER ---
+  // Each selected keyword gets its own token — Scryfall ANDs multiple keyword: tokens together,
+  // meaning a commander must have ALL selected keywords to be returned.
+  // e.g. keywords: ['Flying', 'Haste'] → 'keyword:flying keyword:haste'
+  if (filters.keywords && filters.keywords.length > 0) {
+    filters.keywords.forEach(keyword => {
+      tokens.push(`keyword:${keyword.toLowerCase()}`);
+    });
+  }
+
+  // --- BUDGET FILTER ---
+  // usd<N filters by current market price in USD. We use strict less-than (<) to match
+  // the "Under $X" bracket labels shown in the UI — "Under $5" means strictly below $5.
+  // Cards without a USD price listed are excluded by Scryfall when this token is present.
+  if (filters.budget && filters.budget !== '') {
+    tokens.push(`usd<${filters.budget}`);
+  }
+
+  // --- PARTNER TOGGLE ---
+  // Partner is a keyword ability that lets a commander have a second commander alongside it.
+  // When partnerOnly is true, we only want commanders that have the Partner keyword.
+  // This uses the same keyword: syntax as the keywords filter above.
+  if (filters.partnerOnly) {
+    tokens.push('keyword:partner');
+  }
+
+  // --- PLANESWALKER TOGGLE ---
+  // is:commander includes planeswalker commanders (e.g. Teferi, Temporal Pilgrim).
+  // Most users want creature commanders, so we EXCLUDE planeswalkers by default.
+  // When planeswalker is false → add -t:planeswalker to filter them out.
+  // When planeswalker is true  → add nothing, allowing walkers through.
+  if (!filters.planeswalker) {
+    tokens.push('-t:planeswalker');
   }
 
   // Join all tokens with a single space to form the final query string.

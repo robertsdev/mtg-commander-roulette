@@ -20,13 +20,15 @@ import { buildQuery } from './utils/buildQuery';
 
 // Initial (empty) filter state — all filters are optional
 const DEFAULT_FILTERS = {
-  colours: [],       // Which colour identities to include (e.g. ["B", "R"])
-  numColours: null,  // Exact number of colours (1–5), or null for any
-  creatureType: '',  // Single creature type string, or empty for any
-  keywords: [],      // Array of keyword abilities, or empty for any
-  budget: '',        // Max USD price as a string, or empty for any
-  planeswalker: false, // Whether to allow planeswalker commanders
-  partnerOnly: false,  // Whether to restrict to partner commanders only
+  colours: [],          // Which colour identities to include (e.g. ["B", "R"])
+  colourMode: 'within', // 'within' uses id<= (commanders that fit inside the colours)
+                        // 'exact'  uses id=  (commanders that use exactly those colours)
+  numColours: null,     // Exact number of colours (1–5), or null for any
+  creatureType: '',     // Single creature type string, or empty for any
+  keywords: [],         // Array of keyword abilities, or empty for any
+  budget: '',           // Max USD price as a string, or empty for any
+  planeswalker: false,  // Whether to allow planeswalker commanders
+  partnerOnly: false,   // Whether to restrict to partner commanders only
 };
 
 export default function App() {

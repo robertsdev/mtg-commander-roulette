@@ -22,6 +22,7 @@
 // PARAMETERS
 //   filters: {
 //     colours: string[],         // e.g. ["B", "R"] — empty array means any colour
+//     colourMode: string,        // 'within' → id<= (default), 'exact' → id=
 //     numColours: number | null, // e.g. 2 — exact colour count filter, or null for any
 //     creatureType: string,      // e.g. "Vampire" — empty string means no filter
 //     keywords: string[],        // e.g. ["Flying", "Haste"] — empty array means any
@@ -58,8 +59,14 @@ export function buildQuery(filters) {
     const sorted = [...filters.colours].sort(
       (a, b) => COLOUR_ORDER.indexOf(a) - COLOUR_ORDER.indexOf(b)
     );
-    // Join without spaces: ["B", "R"] => "BR"
-    tokens.push(`id<=${sorted.join('')}`);
+    const colourString = sorted.join('');
+
+    // 'within' (default): id<= means "commanders whose identity fits INSIDE these colours"
+    //   e.g. id<=BR matches B, R, and BR commanders — the way EDH deckbuilding works
+    // 'exact': id= means "commanders who use EXACTLY these colours, no more, no less"
+    //   e.g. id=BR matches only true BR commanders
+    const operator = filters.colourMode === 'exact' ? 'id=' : 'id<=';
+    tokens.push(`${operator}${colourString}`);
   }
 
   // --- CREATURE TYPE FILTER ---

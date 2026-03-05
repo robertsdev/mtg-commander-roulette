@@ -16,6 +16,7 @@ import { buildQuery } from './buildQuery.js';
 // so each test is clear about what it's actually exercising.
 const BASE = {
   colours: [],
+  colourMode: 'within', // default mode — uses id<=
   numColours: null,
   creatureType: '',
   keywords: [],
@@ -32,9 +33,9 @@ describe('baseline', () => {
   });
 });
 
-// ─── COLOUR IDENTITY ──────────────────────────────────────────────────────────
+// ─── COLOUR IDENTITY — WITHIN MODE (default) ──────────────────────────────────
 
-describe('colour identity', () => {
+describe('colour identity — within mode (id<=)', () => {
   test('single colour → id<=B', () => {
     expect(buildQuery({ ...BASE, colours: ['B'] })).toBe('is:commander id<=B');
   });
@@ -54,6 +55,33 @@ describe('colour identity', () => {
 
   test('empty colours array → no id token', () => {
     expect(buildQuery({ ...BASE, colours: [] })).toBe('is:commander');
+  });
+
+  test('colourMode omitted → defaults to within (id<=)', () => {
+    // Even if colourMode is undefined/missing, should behave as 'within'
+    const { colourMode, ...withoutMode } = BASE;
+    expect(buildQuery({ ...withoutMode, colours: ['B', 'R'] })).toBe('is:commander id<=BR');
+  });
+});
+
+// ─── COLOUR IDENTITY — EXACT MODE (id=) ───────────────────────────────────────
+
+describe('colour identity — exact mode (id=)', () => {
+  test('single colour exact → id=B', () => {
+    expect(buildQuery({ ...BASE, colours: ['B'], colourMode: 'exact' })).toBe('is:commander id=B');
+  });
+
+  test('two colours exact → id=BR (still sorted into WUBRG order)', () => {
+    expect(buildQuery({ ...BASE, colours: ['R', 'B'], colourMode: 'exact' })).toBe('is:commander id=BR');
+  });
+
+  test('all five colours exact → id=WUBRG', () => {
+    expect(buildQuery({ ...BASE, colours: ['G', 'R', 'B', 'U', 'W'], colourMode: 'exact' })).toBe('is:commander id=WUBRG');
+  });
+
+  test('exact mode with no colours → no id token', () => {
+    // Exact mode with nothing selected still means "any" — don't output id=
+    expect(buildQuery({ ...BASE, colours: [], colourMode: 'exact' })).toBe('is:commander');
   });
 });
 
@@ -85,13 +113,19 @@ describe('creature type', () => {
 // ─── COMBINED ─────────────────────────────────────────────────────────────────
 
 describe('combined filters', () => {
-  test('colour + creature type → both tokens appear in order', () => {
+  test('within mode + creature type → id<= then t:', () => {
     expect(
       buildQuery({ ...BASE, colours: ['B', 'R'], creatureType: 'Vampire' })
     ).toBe('is:commander id<=BR t:vampire');
   });
 
-  test('all-colours + creature type → full colour string then type', () => {
+  test('exact mode + creature type → id= then t:', () => {
+    expect(
+      buildQuery({ ...BASE, colours: ['B', 'R'], colourMode: 'exact', creatureType: 'Vampire' })
+    ).toBe('is:commander id=BR t:vampire');
+  });
+
+  test('all-colours within + creature type → WUBRG id<= then type', () => {
     expect(
       buildQuery({ ...BASE, colours: ['W', 'U', 'B', 'R', 'G'], creatureType: 'Wizard' })
     ).toBe('is:commander id<=WUBRG t:wizard');

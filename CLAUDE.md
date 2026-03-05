@@ -140,6 +140,24 @@ handled by the `@tailwindcss/vite` plugin in `vite.config.js` and the
 
 ---
 
+## Filter Behaviour Decisions
+
+### Colour Identity Filter
+Uses `id<=` operator by default — returns commanders that fit WITHIN the selected colours,
+not just exactly those colours. This matches how EDH deck building actually works.
+
+A dedicated toggle sits directly under the colour pip buttons with two options:
+- **"Within these colours"** (default) → uses `id<=` operator
+- **"Exactly these colours"** → uses `id=` operator
+
+The number of colours filter remains visible and usable in both modes.
+
+**Examples:**
+- User selects B + R with default mode → `id<=BR`
+- User selects B + R with exact mode → `id=BR`
+
+---
+
 ## Context Claude Should Always Know
 - Rob is the developer — comfortable with concepts, not an experienced coder
 - This is a learning project — explain what you're doing and why when writing code

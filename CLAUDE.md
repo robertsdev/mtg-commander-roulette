@@ -85,6 +85,9 @@ is:commander id<=BR t:vampire keyword:flying usd<20
 - [ ] Loading state — spinner or skeleton while fetching
 - [ ] Error state — friendly message if API call fails
 
+> **Session 1 progress:** All items above remain to be implemented. This session
+> was setup only — scaffold, tooling, and placeholder files. See session log below.
+
 ### Phase 2 — After MVP Works
 - [ ] Theme/archetype filter (requires EDHREC research)
 - [ ] Show colour identity pips visually on result card
@@ -116,9 +119,12 @@ mtg-commander-roulette/
 ├── .gitignore
 ├── index.html
 ├── package.json
-├── tailwind.config.js
 └── vite.config.js
 ```
+
+Note: Tailwind CSS v4 does not use a `tailwind.config.js` file. Configuration is
+handled by the `@tailwindcss/vite` plugin in `vite.config.js` and the
+`@import "tailwindcss"` directive in `src/index.css`.
 
 ---
 
@@ -153,3 +159,36 @@ mtg-commander-roulette/
 - Backend / database
 - Blog or content management
 - Multiple pages or routing
+
+---
+
+## Session Log
+
+### Session 1 — 2026-03-05 — Project Setup
+**What was done:**
+- Created GitHub repo: github.com/robertsdev/mtg-commander-roulette (public)
+- Scaffolded React + Vite project
+- Installed and configured Tailwind CSS v4 using the `@tailwindcss/vite` plugin
+  - No `tailwind.config.js` needed in v4 — plugin handles it via `vite.config.js`
+  - `src/index.css` replaced with `@import "tailwindcss"` directive
+- Removed Vite's default boilerplate (`App.css`, demo counter, logos)
+- Created all placeholder component files with detailed comments:
+  - `src/App.jsx` — root component with filter state, hook wiring, and handler stubs
+  - `src/components/FilterPanel.jsx`
+  - `src/components/CommanderCard.jsx`
+  - `src/components/ColourPips.jsx`
+  - `src/components/TypeaheadInput.jsx`
+  - `src/components/LoadingState.jsx`
+  - `src/hooks/useScryfall.js` — stub with all return values documented
+  - `src/utils/buildQuery.js` — stub with full Scryfall query syntax reference
+
+**Decisions made:**
+- Tailwind v4 used (latest) — plugin-based config, no config file required
+- `DEFAULT_FILTERS` object defined in `App.jsx` — single source of truth for filter reset
+- All filter state lives in `App.jsx` and flows down as props — no external state library needed for Phase 1
+- Catalog fetches (creature types, keyword abilities) will be done inside `useScryfall` on mount and cached in state
+
+**Next session should start with:**
+- Implement `useScryfall.js` — fetch catalogs on mount, implement `fetchCommander`
+- Implement `buildQuery.js` — assemble query string from filter state
+- Build out `FilterPanel.jsx` starting with the colour pip buttons and submit button so there's something to click

@@ -139,6 +139,17 @@ handled by the `@tailwindcss/vite` plugin in `vite.config.js` and the
 
 ## Filter Behaviour Decisions
 
+### Number of Colours vs Colour Identity
+
+The "Number of colours" selector is hidden when any colour identity pip is selected.
+Selecting a pip already constrains colour identity — showing a separate count selector
+alongside it is redundant and confusing (e.g. selecting B + setting "Mono" is fine,
+but selecting B + R + setting "Mono" produces zero results silently).
+
+When a pip is selected and `numColours` was already set, it is cleared automatically
+so it doesn't silently persist in the query while the control is hidden.
+The selector reappears as soon as all pips are deselected.
+
 ### Colour Identity Filter
 Uses `id<=` operator by default — returns commanders that fit WITHIN the selected colours,
 not just exactly those colours. This matches how EDH deck building actually works.

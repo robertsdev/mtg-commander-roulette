@@ -17,6 +17,20 @@ import ColourPips from './ColourPips';
 import TypeaheadInput from './TypeaheadInput';
 
 export default function FilterPanel({ filters, onChange, onSubmit, onReset, loading, creatureTypes, keywordAbilities }) {
+
+  // Wrap ColourPips' onChange so that selecting a pip also clears numColours.
+  // If the user had "Mono" set and then picks a colour pip, numColours would
+  // silently persist in state and sneak into the query even though the selector
+  // is hidden. Resetting it here keeps state and UI in sync.
+  function handleColoursChange(update) {
+    const newColours = update.colours;
+    if (newColours !== undefined && newColours.length > 0 && filters.numColours !== null) {
+      onChange({ ...update, numColours: null });
+    } else {
+      onChange(update);
+    }
+  }
+
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 space-y-6">
 
@@ -24,13 +38,14 @@ export default function FilterPanel({ filters, onChange, onSubmit, onReset, load
       <ColourPips
         selected={filters.colours}
         colourMode={filters.colourMode}
-        onChange={onChange}
+        onChange={handleColoursChange}
       />
 
       {/* NUMBER OF COLOURS SELECTOR */}
-      {/* A row of pill buttons. Clicking the active option again resets to null (= Any).
-          "Mono" and "Dual" use common MTG vocabulary; 3–5 are just the number.
-          null means no filter — Scryfall returns commanders of any colour count. */}
+      {/* Hidden when any colour pip is selected — the pip selection already
+          constrains colour identity, making a separate count filter redundant
+          and potentially confusing. Shown again when all pips are deselected. */}
+      {filters.colours.length === 0 && (
       <div>
         <p className="text-sm text-gray-400 mb-2">Number of colours</p>
         <div className="flex gap-2 flex-wrap">
@@ -65,6 +80,7 @@ export default function FilterPanel({ filters, onChange, onSubmit, onReset, load
           })}
         </div>
       </div>
+      )}
 
       {/* CREATURE TYPE TYPEAHEAD — single-select */}
       {/* Single creature type picked from the Scryfall catalog.

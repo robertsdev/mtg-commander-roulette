@@ -71,7 +71,7 @@ is:commander id<=BR t:vampire keyword:flying usd<20
 ### Phase 1 — MVP (Build This First)
 - [x] Landing screen with filter panel and branding
 - [x] Colour identity filter — clickable W/U/B/R/G pip buttons (multi-select, optional)
-- [ ] Number of colours filter — Mono / 2 / 3 / 4 / 5 colour selector (optional)
+- [x] Number of colours filter — Mono / 2 / 3 / 4 / 5 colour selector (optional)
 - [ ] Creature type filter — typeahead input sourced from Scryfall catalog
 - [ ] Keyword/ability filter — multi-select sourced from Scryfall catalog
 - [ ] Budget filter — bracket selector (Any / Under $5 / Under $10 / Under $25)
@@ -240,6 +240,8 @@ The number of colours filter remains visible and usable in both modes.
 
 `src/components/FilterPanel.jsx` — partially implemented:
 - ColourPips wired up (colours + colourMode + onChange)
+- Number of colours: pill buttons Any / Mono / 2 / 3 / 4 / 5; active pill is indigo,
+  clicking active non-Any pill deselects back to null
 - "Find My Commander" and "Start Over" buttons with loading/disabled states
 - TODO comments in place for remaining filter controls
 
@@ -249,9 +251,9 @@ The number of colours filter remains visible and usable in both modes.
   to distinguish "no match" from "real error" with a simple string check
 - Scryfall SVG symbols loaded from CDN (`svgs.scryfall.io`) — no extra packages,
   no API call, loads fast, real MTG artwork
+- numColours selector lives in FilterPanel directly — no separate component needed
 
 **Next session should start with:**
-- `FilterPanel.jsx` — remaining controls: numColours selector, budget bracket,
-  planeswalker toggle, partner toggle
-- `TypeaheadInput.jsx` — creature type and keyword filters (uses catalog data from useScryfall)
+- `TypeaheadInput.jsx` — creature type (single-select) and keyword (multi-select) filters
+- `FilterPanel.jsx` — budget bracket selector, planeswalker toggle, partner toggle
 - `CommanderCard.jsx` — display the result card so there's something to show after a fetch

@@ -94,11 +94,11 @@ export function buildQuery(filters) {
   }
 
   // --- BUDGET FILTER ---
-  // usd<N filters by current market price in USD. We use strict less-than (<) to match
-  // the "Under $X" bracket labels shown in the UI — "Under $5" means strictly below $5.
+  // usd<=N filters by current market price in USD. We use less-than-or-equal (<=) so
+  // the bracket labels are inclusive — "Bulk (≤$1)" includes cards priced exactly $1.
   // Cards without a USD price listed are excluded by Scryfall when this token is present.
   if (filters.budget && filters.budget !== '') {
-    tokens.push(`usd<${filters.budget}`);
+    tokens.push(`usd<=${filters.budget}`);
   }
 
   // --- PARTNER TOGGLE ---

@@ -167,18 +167,24 @@ describe('keywords', () => {
 });
 
 // ─── BUDGET ───────────────────────────────────────────────────────────────────
+// Budget uses usd<= (inclusive) so bracket labels like "≤$1" include exactly $1.
+// UI brackets: '' (Any) | '1' (Bulk) | '5' (Budget) | '15' (Mid) | '30' (Pricey)
 
 describe('budget', () => {
-  test('budget "5" → usd<5', () => {
-    expect(buildQuery({ ...BASE, budget: '5' })).toBe('is:commander usd<5');
+  test('budget "1" → usd<=1 (Bulk bracket)', () => {
+    expect(buildQuery({ ...BASE, budget: '1' })).toBe('is:commander usd<=1');
   });
 
-  test('budget "10" → usd<10', () => {
-    expect(buildQuery({ ...BASE, budget: '10' })).toBe('is:commander usd<10');
+  test('budget "5" → usd<=5 (Budget bracket)', () => {
+    expect(buildQuery({ ...BASE, budget: '5' })).toBe('is:commander usd<=5');
   });
 
-  test('budget "25" → usd<25', () => {
-    expect(buildQuery({ ...BASE, budget: '25' })).toBe('is:commander usd<25');
+  test('budget "15" → usd<=15 (Mid bracket)', () => {
+    expect(buildQuery({ ...BASE, budget: '15' })).toBe('is:commander usd<=15');
+  });
+
+  test('budget "30" → usd<=30 (Pricey bracket)', () => {
+    expect(buildQuery({ ...BASE, budget: '30' })).toBe('is:commander usd<=30');
   });
 
   test('budget empty string → no usd token', () => {
@@ -239,8 +245,8 @@ describe('combined filters', () => {
 
   test('colour + keyword + budget → all three tokens', () => {
     expect(
-      buildQuery({ ...BASE, colours: ['B'], keywords: ['Flying'], budget: '10' })
-    ).toBe('is:commander id<=B keyword:flying usd<10');
+      buildQuery({ ...BASE, colours: ['B'], keywords: ['Flying'], budget: '15' })
+    ).toBe('is:commander id<=B keyword:flying usd<=15');
   });
 
   test('all filters active (walkers excluded) → full query', () => {
@@ -250,9 +256,9 @@ describe('combined filters', () => {
       numColours: 2,
       creatureType: 'Vampire',
       keywords: ['Flying'],
-      budget: '25',
+      budget: '30',
       planeswalker: false,
       partnerOnly: false,
-    })).toBe('is:commander id<=BR c=2 t:vampire keyword:flying usd<25 -t:planeswalker');
+    })).toBe('is:commander id<=BR c=2 t:vampire keyword:flying usd<=30 -t:planeswalker');
   });
 });

@@ -139,6 +139,27 @@ handled by the `@tailwindcss/vite` plugin in `vite.config.js` and the
 
 ## Filter Behaviour Decisions
 
+### Layout
+
+Two layout modes — App.jsx switches between them based on whether a card result is present:
+
+- **No card** (initial, loading, error): filter panel centred, max-w-2xl
+- **Card showing**: three-column grid (max-w-7xl):
+  - Left (~280px fixed): FilterPanel
+  - Middle (flex 1): card image — large hero visual, sticky while scrolling
+  - Right (~320px fixed): CommanderCard details panel (name, mana cost, type, oracle text, etc.)
+
+`CommanderCard.jsx` no longer renders the card image — that's App.jsx's responsibility in the middle column. CommanderCard handles details-only, plus error/empty states (which show in the centred layout below the filter panel).
+
+### Budget Brackets
+
+Budget uses `usd<=` (inclusive, not strict `usd<`) so bracket labels match exactly:
+- Any (no filter)
+- Bulk ≤$1 → `usd<=1`
+- Budget ≤$5 → `usd<=5`
+- Mid ≤$15 → `usd<=15`
+- Pricey ≤$30 → `usd<=30`
+
 ### Number of Colours vs Colour Identity
 
 The "Number of colours" selector is hidden when any colour identity pip is selected.

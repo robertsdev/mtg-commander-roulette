@@ -107,15 +107,16 @@ export default function FilterPanel({ filters, onChange, onSubmit, onReset, load
       />
       {/* BUDGET BRACKET SELECTOR */}
       {/* Pill buttons for max price. Empty string = no budget filter.
-          The values match the usd< operator in buildQuery.js. */}
+          Values are inclusive (usd<=N) — "Bulk ≤$1" includes cards at exactly $1. */}
       <div>
         <p className="text-sm text-gray-400 mb-2">Budget</p>
         <div className="flex gap-2 flex-wrap">
           {[
             { value: '',   label: 'Any'       },
-            { value: '5',  label: 'Under $5'  },
-            { value: '10', label: 'Under $10' },
-            { value: '25', label: 'Under $25' },
+            { value: '1',  label: 'Bulk ≤$1'  },
+            { value: '5',  label: 'Budget ≤$5' },
+            { value: '15', label: 'Mid ≤$15'  },
+            { value: '30', label: 'Pricey ≤$30' },
           ].map(({ value, label }) => {
             const isActive = filters.budget === value;
             return (

@@ -10,6 +10,13 @@
 //   - Passes card result, error, and tryAgain handler down to CommanderCard
 //   - Shows LoadingState while a fetch is in progress
 //   - Renders the app header/branding
+//
+// LAYOUT BEHAVIOUR
+//   No card showing → filter panel centred (max-w-2xl), error/loading below it
+//   Card showing    → three-column grid:
+//                       Left   (fixed ~280px): FilterPanel
+//                       Middle (flex 1):       card image — the hero visual
+//                       Right  (fixed ~320px): CommanderCard details panel
 
 import { useState } from 'react';
 import FilterPanel from './components/FilterPanel';
@@ -57,6 +64,24 @@ export default function App() {
     clearCard();
   }
 
+  // Resolve card image URL here so App can render it in the middle column.
+  // Some double-faced cards (DFCs) store images per-face rather than at the
+  // top level — fall back to the front face's image in that case.
+  const cardImageUrl = card
+    ? (card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal)
+    : null;
+
+  // Shared FilterPanel props — same in both layout modes
+  const filterPanelProps = {
+    filters,
+    onChange: handleFilterChange,
+    onSubmit: handleSubmit,
+    onReset: handleReset,
+    loading,
+    creatureTypes,
+    keywordAbilities,
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
       {/* App header */}
@@ -65,28 +90,61 @@ export default function App() {
         <p className="text-gray-400 mt-2">Find your next commander — spin the wheel.</p>
       </header>
 
-      <main className="max-w-2xl mx-auto space-y-6">
-        {/* Filter controls */}
-        <FilterPanel
-          filters={filters}
-          onChange={handleFilterChange}
-          onSubmit={handleSubmit}
-          onReset={handleReset}
-          loading={loading}
-          creatureTypes={creatureTypes}
-          keywordAbilities={keywordAbilities}
-        />
+      {card ? (
+        // ── THREE-COLUMN LAYOUT ────────────────────────────────────────────────
+        // Shown when a card result is available.
+        //   col 1 (280px): filter panel
+        //   col 2 (1fr):   card image — large hero visual
+        //   col 3 (320px): card details
+        // On small screens the columns stack vertically.
+        <main className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-6 items-start">
 
-        {/* Result area */}
-        {loading && <LoadingState />}
-        {!loading && (card || error) && (
-          <CommanderCard
-            card={card}
-            error={error}
-            onTryAgain={handleTryAgain}
-          />
-        )}
-      </main>
+            {/* LEFT: filter panel */}
+            <FilterPanel {...filterPanelProps} />
+
+            {/* MIDDLE: card image — sticky so it stays in view while scrolling details */}
+            <div className="lg:sticky lg:top-6">
+              {cardImageUrl && (
+                <img
+                  src={cardImageUrl}
+                  alt={card.name}
+                  className="w-full rounded-xl shadow-2xl"
+                />
+              )}
+            </div>
+
+            {/* RIGHT: card details panel */}
+            <CommanderCard
+              card={card}
+              error={null}
+              onTryAgain={handleTryAgain}
+            />
+
+          </div>
+        </main>
+
+      ) : (
+        // ── CENTRED SINGLE-COLUMN LAYOUT ───────────────────────────────────────
+        // Shown when no card is available: initial state, loading, or error/empty.
+        <main className="max-w-2xl mx-auto space-y-6">
+
+          <FilterPanel {...filterPanelProps} />
+
+          {/* Loading spinner */}
+          {loading && <LoadingState />}
+
+          {/* Error / empty state */}
+          {!loading && error && (
+            <CommanderCard
+              card={null}
+              error={error}
+              onTryAgain={handleTryAgain}
+            />
+          )}
+
+        </main>
+      )}
     </div>
   );
 }

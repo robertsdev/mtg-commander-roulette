@@ -346,6 +346,41 @@ The number of colours filter remains visible and usable in both modes.
 - Hybrid mana symbols like `{W/U}` handled by stripping `/` → filename `WU.svg`
 - `??` (nullish coalescing) used throughout for DFC fallbacks — cleaner than `||` when empty string is a valid value
 
+---
+
+### Session 5 — 2026-03-06 — UX Polish + Layout Rework
+
+**What was done:**
+
+`src/components/FilterPanel.jsx` — numColours hide/show:
+- "Number of colours" selector now hidden when any colour pip is selected (redundant alongside pip selection)
+- `handleColoursChange` wrapper: when colours go empty → non-empty, also clears `numColours: null`
+  in the same update so stale values don't silently persist in the query
+
+`src/utils/buildQuery.js` — budget operator:
+- Changed from `usd<` (strict) to `usd<=` (inclusive) so bracket labels match exactly
+
+`src/utils/buildQuery.test.js` — budget tests updated:
+- Replaced old bracket values (5/10/25) with new brackets (1/5/15/30)
+- Updated combined tests to use new values and `usd<=` operator
+- Added one new test (Bulk ≤$1); total now **41 tests, all passing**
+
+`src/components/FilterPanel.jsx` — budget brackets:
+- New options: Any / Bulk ≤$1 / Budget ≤$5 / Mid ≤$15 / Pricey ≤$30
+
+`src/App.jsx` — three-column layout:
+- No card showing → centred single column (unchanged)
+- Card showing → `lg:grid-cols-[280px_1fr_320px]` grid: FilterPanel | hero image | details
+- Card image URL resolved in App.jsx (with DFC fallback), rendered in the middle column with `lg:sticky lg:top-6`
+- `LoadingState` and error panel remain in the centred layout (card is null during both)
+
+`src/components/CommanderCard.jsx` — details-only:
+- Image section removed (image now lives in App.jsx middle column)
+- Outer flex row removed; component is now just the details panel in its own card container
+- Error/empty states unchanged
+
+**41 tests passing.**
+
 **Next session should start with:**
-- Phase 2 items, or polish/bugfix pass after manual testing
-- Suggested: "Open on Scryfall" link, colour identity pips on result card, mobile layout review
+- Phase 2 items — "Open on Scryfall" link and colour identity pips on result card are the quickest wins
+- Manual browser testing recommended before starting Phase 2

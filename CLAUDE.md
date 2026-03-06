@@ -72,11 +72,11 @@ is:commander id<=BR t:vampire keyword:flying usd<20
 - [x] Landing screen with filter panel and branding
 - [x] Colour identity filter — clickable W/U/B/R/G pip buttons (multi-select, optional)
 - [x] Number of colours filter — Mono / 2 / 3 / 4 / 5 colour selector (optional)
-- [ ] Creature type filter — typeahead input sourced from Scryfall catalog
-- [ ] Keyword/ability filter — multi-select sourced from Scryfall catalog
-- [ ] Budget filter — bracket selector (Any / Under $5 / Under $10 / Under $25)
-- [ ] Planeswalker toggle — include/exclude planeswalker commanders
-- [ ] Partner toggle — include/exclude partner commanders only
+- [x] Creature type filter — typeahead input sourced from Scryfall catalog
+- [x] Keyword/ability filter — multi-select sourced from Scryfall catalog
+- [x] Budget filter — bracket selector (Any / Under $5 / Under $10 / Under $25)
+- [x] Planeswalker toggle — include/exclude planeswalker commanders
+- [x] Partner toggle — include/exclude partner commanders only
 - [x] "Find My Commander" submit button — fetches random result from Scryfall
 - [ ] Result card displays: card image, name, mana cost, type line, rules text, flavour text, price
 - [ ] "Try Again" button — re-rolls with same active filters
@@ -254,6 +254,34 @@ The number of colours filter remains visible and usable in both modes.
 - numColours selector lives in FilterPanel directly — no separate component needed
 
 **Next session should start with:**
-- `TypeaheadInput.jsx` — creature type (single-select) and keyword (multi-select) filters
-- `FilterPanel.jsx` — budget bracket selector, planeswalker toggle, partner toggle
-- `CommanderCard.jsx` — display the result card so there's something to show after a fetch
+- `CommanderCard.jsx` — display the result card (image, name, mana cost, type line, rules text, flavour text, price)
+- `App.jsx` — wire up `clearCard` / `resetCard` in `useScryfall` so "Start Over" clears the result
+- Error state — friendly message if the API call fails (network error or non-404 status)
+
+---
+
+### Session 3 — 2026-03-06 — Filter Panel Complete
+
+**What was done:**
+
+`src/components/TypeaheadInput.jsx` — fully implemented:
+- Single-select mode (creature type): input hides once a value is chosen; value shown as indigo chip with × to clear
+- Multi-select mode (keywords): input stays visible; each selection adds a chip; chips can be removed independently
+- Dropdown shows up to 10 filtered options from the catalog; already-selected options excluded from dropdown
+- "No matches" message when typed text has no matches
+- Click-outside closes dropdown (mousedown listener on document)
+- Uses `onMouseDown` on dropdown items to prevent input blur firing before selection
+
+`src/components/FilterPanel.jsx` — all filter controls wired up:
+- Creature type typeahead (single-select, sourced from `creatureTypes` catalog)
+- Keyword multi-select (sourced from `keywordAbilities` catalog)
+- Budget bracket pills: Any / Under $5 / Under $10 / Under $25 (same pill style as numColours)
+- Planeswalker toggle: pill-shaped CSS toggle, off by default
+- Partner toggle: same toggle design, off by default
+- All controls call `onChange` with a partial filter update
+
+**All 40 tests still passing.**
+
+**Decisions made:**
+- Toggle switches built with CSS only (hidden checkbox + `peer` classes) — no external library needed
+- TypeaheadInput limits dropdown to 10 results to keep the UI clean

@@ -14,6 +14,7 @@
 //   keywordAbilities: string[] — catalog from Scryfall (for TypeaheadInput, coming soon)
 
 import ColourPips from './ColourPips';
+import TypeaheadInput from './TypeaheadInput';
 
 export default function FilterPanel({ filters, onChange, onSubmit, onReset, loading, creatureTypes, keywordAbilities }) {
   return (
@@ -65,11 +66,99 @@ export default function FilterPanel({ filters, onChange, onSubmit, onReset, load
         </div>
       </div>
 
-      {/* TODO: Creature type typeahead */}
-      {/* TODO: Keyword/ability typeahead */}
-      {/* TODO: Budget bracket selector */}
-      {/* TODO: Planeswalker toggle */}
-      {/* TODO: Partner toggle */}
+      {/* CREATURE TYPE TYPEAHEAD — single-select */}
+      {/* Single creature type picked from the Scryfall catalog.
+          Empty string = no filter. */}
+      <TypeaheadInput
+        label="Creature type"
+        options={creatureTypes}
+        selected={filters.creatureType}
+        onChange={value => onChange({ creatureType: value })}
+        multiSelect={false}
+        placeholder="e.g. Vampire"
+      />
+
+      {/* KEYWORD MULTI-SELECT — multiple keywords allowed */}
+      {/* Each selected keyword adds a keyword:X token to the query.
+          Scryfall ANDs them — commander must have ALL selected keywords. */}
+      <TypeaheadInput
+        label="Keywords"
+        options={keywordAbilities}
+        selected={filters.keywords}
+        onChange={value => onChange({ keywords: value })}
+        multiSelect={true}
+        placeholder="e.g. Flying"
+      />
+      {/* BUDGET BRACKET SELECTOR */}
+      {/* Pill buttons for max price. Empty string = no budget filter.
+          The values match the usd< operator in buildQuery.js. */}
+      <div>
+        <p className="text-sm text-gray-400 mb-2">Budget</p>
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { value: '',   label: 'Any'       },
+            { value: '5',  label: 'Under $5'  },
+            { value: '10', label: 'Under $10' },
+            { value: '25', label: 'Under $25' },
+          ].map(({ value, label }) => {
+            const isActive = filters.budget === value;
+            return (
+              <button
+                key={label}
+                onClick={() =>
+                  // Clicking the active non-Any option deselects back to '' (= Any)
+                  onChange({ budget: isActive && value !== '' ? '' : value })
+                }
+                aria-pressed={isActive}
+                className={[
+                  'px-3 py-1 rounded-full text-sm font-medium border transition-colors duration-100',
+                  isActive
+                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                    : 'bg-gray-800 border-gray-600 text-gray-400 hover:text-white hover:border-gray-400',
+                ].join(' ')}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {/* PLANESWALKER TOGGLE */}
+      {/* Off by default — buildQuery adds -t:planeswalker when this is false.
+          Turning it on allows planeswalker commanders (e.g. Teferi) through. */}
+      <label className="flex items-center justify-between cursor-pointer select-none">
+        <span className="text-sm text-gray-300">Include planeswalker commanders</span>
+        <div className="relative ml-3">
+          <input
+            type="checkbox"
+            checked={filters.planeswalker}
+            onChange={e => onChange({ planeswalker: e.target.checked })}
+            className="sr-only peer"
+          />
+          {/* Visual track */}
+          <div className="w-10 h-6 bg-gray-600 rounded-full peer-checked:bg-indigo-600 transition-colors duration-150" />
+          {/* Visual thumb */}
+          <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-150 peer-checked:translate-x-4" />
+        </div>
+      </label>
+      {/* PARTNER TOGGLE */}
+      {/* Off by default. When on, adds keyword:partner to the query so only
+          commanders that can have a partner are returned. */}
+      <label className="flex items-center justify-between cursor-pointer select-none">
+        <span className="text-sm text-gray-300">Partner commanders only</span>
+        <div className="relative ml-3">
+          <input
+            type="checkbox"
+            checked={filters.partnerOnly}
+            onChange={e => onChange({ partnerOnly: e.target.checked })}
+            className="sr-only peer"
+          />
+          {/* Visual track */}
+          <div className="w-10 h-6 bg-gray-600 rounded-full peer-checked:bg-indigo-600 transition-colors duration-150" />
+          {/* Visual thumb */}
+          <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-150 peer-checked:translate-x-4" />
+        </div>
+      </label>
 
       {/* ACTION BUTTONS */}
       <div className="flex gap-3 pt-2">

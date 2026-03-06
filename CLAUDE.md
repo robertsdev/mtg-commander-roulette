@@ -69,24 +69,21 @@ is:commander id<=BR t:vampire keyword:flying usd<20
 ## Project Goals
 
 ### Phase 1 — MVP (Build This First)
-- [ ] Landing screen with filter panel and branding
-- [ ] Colour identity filter — clickable W/U/B/R/G pip buttons (multi-select, optional)
+- [x] Landing screen with filter panel and branding
+- [x] Colour identity filter — clickable W/U/B/R/G pip buttons (multi-select, optional)
 - [ ] Number of colours filter — Mono / 2 / 3 / 4 / 5 colour selector (optional)
 - [ ] Creature type filter — typeahead input sourced from Scryfall catalog
 - [ ] Keyword/ability filter — multi-select sourced from Scryfall catalog
 - [ ] Budget filter — bracket selector (Any / Under $5 / Under $10 / Under $25)
 - [ ] Planeswalker toggle — include/exclude planeswalker commanders
 - [ ] Partner toggle — include/exclude partner commanders only
-- [ ] "Find My Commander" submit button — fetches random result from Scryfall
+- [x] "Find My Commander" submit button — fetches random result from Scryfall
 - [ ] Result card displays: card image, name, mana cost, type line, rules text, flavour text, price
 - [ ] "Try Again" button — re-rolls with same active filters
-- [ ] "Start Over" button — clears all filters
+- [x] "Start Over" button — clears all filters
 - [ ] Empty state — friendly message when no commanders match filters
-- [ ] Loading state — spinner or skeleton while fetching
+- [x] Loading state — handled in useScryfall (loading flag + no_results sentinel)
 - [ ] Error state — friendly message if API call fails
-
-> **Session 1 progress:** All items above remain to be implemented. This session
-> was setup only — scaffold, tooling, and placeholder files. See session log below.
 
 ### Phase 2 — After MVP Works
 - [ ] Theme/archetype filter (requires EDHREC research)
@@ -207,6 +204,54 @@ The number of colours filter remains visible and usable in both modes.
 - Catalog fetches (creature types, keyword abilities) will be done inside `useScryfall` on mount and cached in state
 
 **Next session should start with:**
-- Implement `useScryfall.js` — fetch catalogs on mount, implement `fetchCommander`
-- Implement `buildQuery.js` — assemble query string from filter state
-- Build out `FilterPanel.jsx` starting with the colour pip buttons and submit button so there's something to click
+- ~~Implement `useScryfall.js` — fetch catalogs on mount, implement `fetchCommander`~~ ✓ Done
+- ~~Implement `buildQuery.js` — assemble query string from filter state~~ ✓ Done
+- ~~Build out `FilterPanel.jsx` starting with the colour pip buttons and submit button~~ ✓ Done
+
+---
+
+### Session 2 — 2026-03-06 — Data Layer + First UI
+
+**What was done:**
+
+`src/utils/buildQuery.js` — fully implemented:
+- All Phase 1 filters: colour identity (within/exact), numColours, creatureType,
+  keywords, budget, planeswalker exclusion, partnerOnly
+- Colours sorted into WUBRG order for Scryfall's id<= operator
+- Planeswalker excluded by default (`-t:planeswalker`); opt-in via toggle
+- 40 tests, all green (Vitest)
+- Key test design decision: BASE fixture uses `planeswalker: true` for isolation;
+  real-world default (`planeswalker: false`) tested explicitly in baseline group
+
+`src/hooks/useScryfall.js` — fully implemented:
+- `useEffect` fetches creature-types and keyword-abilities catalogs on mount (once, cached)
+- `fetchCommander(query)` calls `/cards/random?q=` with URL-encoded query
+- Three outcome states: success (card set), 404 → `error: 'no_results'` sentinel,
+  network failure → human-readable error string
+- `loading` always cleared in `finally` block — spinner never gets stuck
+
+`src/components/ColourPips.jsx` — fully implemented:
+- Five pip buttons using real Scryfall CDN SVG mana symbols
+  (`https://svgs.scryfall.io/card-symbols/{W,U,B,R,G}.svg`)
+- Selected: full opacity, white ring + offset, scale-110
+- Unselected: 40% opacity, hover to 70%
+- Within/Exactly mode toggle shown below pips only when ≥1 colour selected
+- `aria-pressed` and `aria-label` on all interactive elements
+
+`src/components/FilterPanel.jsx` — partially implemented:
+- ColourPips wired up (colours + colourMode + onChange)
+- "Find My Commander" and "Start Over" buttons with loading/disabled states
+- TODO comments in place for remaining filter controls
+
+**Decisions made:**
+- Colour mode toggle hidden when no colours selected (would be meaningless)
+- `error: 'no_results'` is a string sentinel, not a boolean — allows `CommanderCard`
+  to distinguish "no match" from "real error" with a simple string check
+- Scryfall SVG symbols loaded from CDN (`svgs.scryfall.io`) — no extra packages,
+  no API call, loads fast, real MTG artwork
+
+**Next session should start with:**
+- `FilterPanel.jsx` — remaining controls: numColours selector, budget bracket,
+  planeswalker toggle, partner toggle
+- `TypeaheadInput.jsx` — creature type and keyword filters (uses catalog data from useScryfall)
+- `CommanderCard.jsx` — display the result card so there's something to show after a fetch

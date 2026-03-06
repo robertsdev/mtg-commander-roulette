@@ -78,12 +78,12 @@ is:commander id<=BR t:vampire keyword:flying usd<20
 - [x] Planeswalker toggle — include/exclude planeswalker commanders
 - [x] Partner toggle — include/exclude partner commanders only
 - [x] "Find My Commander" submit button — fetches random result from Scryfall
-- [ ] Result card displays: card image, name, mana cost, type line, rules text, flavour text, price
-- [ ] "Try Again" button — re-rolls with same active filters
+- [x] Result card displays: card image, name, mana cost, type line, rules text, flavour text, price
+- [x] "Try Again" button — re-rolls with same active filters
 - [x] "Start Over" button — clears all filters
-- [ ] Empty state — friendly message when no commanders match filters
+- [x] Empty state — friendly message when no commanders match filters
 - [x] Loading state — handled in useScryfall (loading flag + no_results sentinel)
-- [ ] Error state — friendly message if API call fails
+- [x] Error state — friendly message if API call fails
 
 ### Phase 2 — After MVP Works
 - [ ] Theme/archetype filter (requires EDHREC research)
@@ -253,11 +253,6 @@ The number of colours filter remains visible and usable in both modes.
   no API call, loads fast, real MTG artwork
 - numColours selector lives in FilterPanel directly — no separate component needed
 
-**Next session should start with:**
-- `CommanderCard.jsx` — display the result card (image, name, mana cost, type line, rules text, flavour text, price)
-- `App.jsx` — wire up `clearCard` / `resetCard` in `useScryfall` so "Start Over" clears the result
-- Error state — friendly message if the API call fails (network error or non-404 status)
-
 ---
 
 ### Session 3 — 2026-03-06 — Filter Panel Complete
@@ -285,3 +280,40 @@ The number of colours filter remains visible and usable in both modes.
 **Decisions made:**
 - Toggle switches built with CSS only (hidden checkbox + `peer` classes) — no external library needed
 - TypeaheadInput limits dropdown to 10 results to keep the UI clean
+
+---
+
+### Session 4 — 2026-03-06 — CommanderCard + Phase 1 Complete
+
+**What was done:**
+
+`src/components/CommanderCard.jsx` — fully implemented:
+- Card image on the left (`image_uris.normal`), details on the right (responsive: stacks vertically on mobile)
+- Name + mana cost on same row — mana cost rendered as real Scryfall SVG pip icons via `ManaCost` helper component
+- Type line in gray below name
+- Oracle text (rules) below divider, with `whitespace-pre-line` to preserve line breaks
+- Flavour text in italic/muted below a second rule line (only rendered when present)
+- Price at bottom left (`$X.XX` or "Price unknown"), "Try Again" button at bottom right
+- Double-faced card (DFC) safety: falls back to `card_faces[0]` for image, oracle text, and flavour text
+- Empty state (`error === 'no_results'`): friendly message + Try Again button
+- Error state (any other error string): warning message + error text + Try Again button
+
+`src/hooks/useScryfall.js` — added `clearCard()`:
+- Resets `card` and `error` to null
+- Exposed in hook return value
+
+`src/App.jsx` — wired up `clearCard`:
+- `handleReset` now calls `clearCard()` as well as `setFilters(DEFAULT_FILTERS)`
+- Removed TODO comment
+
+**All Phase 1 MVP items are now complete. All 40 tests passing.**
+
+**Decisions made:**
+- `ManaCost` is a private helper function at the bottom of `CommanderCard.jsx` — not a separate file,
+  since it's only used in one place (avoids unnecessary file proliferation)
+- Hybrid mana symbols like `{W/U}` handled by stripping `/` → filename `WU.svg`
+- `??` (nullish coalescing) used throughout for DFC fallbacks — cleaner than `||` when empty string is a valid value
+
+**Next session should start with:**
+- Phase 2 items, or polish/bugfix pass after manual testing
+- Suggested: "Open on Scryfall" link, colour identity pips on result card, mobile layout review

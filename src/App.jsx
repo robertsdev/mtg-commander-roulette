@@ -33,7 +33,7 @@ const DEFAULT_FILTERS = {
 
 export default function App() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const { fetchCommander, card, loading, error, creatureTypes, keywordAbilities } = useScryfall();
+  const { fetchCommander, clearCard, card, loading, error, creatureTypes, keywordAbilities } = useScryfall();
 
   // Called when any individual filter changes — merges update into filter state
   function handleFilterChange(updated) {
@@ -54,7 +54,7 @@ export default function App() {
   // Called when user hits "Start Over" — resets all filters and clears the result
   function handleReset() {
     setFilters(DEFAULT_FILTERS);
-    // TODO: also clear card result in useScryfall
+    clearCard();
   }
 
   return (

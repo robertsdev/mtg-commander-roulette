@@ -125,5 +125,13 @@ export default function useScryfall() {
     }
   }
 
-  return { fetchCommander, card, loading, error, creatureTypes, keywordAbilities };
+  // --- CLEAR CARD ---
+  // Called when the user hits "Start Over". Wipes the current result and any
+  // error so the UI returns to its blank pre-search state.
+  function clearCard() {
+    setCard(null);
+    setError(null);
+  }
+
+  return { fetchCommander, clearCard, card, loading, error, creatureTypes, keywordAbilities };
 }

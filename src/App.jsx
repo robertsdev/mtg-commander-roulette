@@ -109,7 +109,7 @@ export default function App() {
                 <img
                   src={cardImageUrl}
                   alt={card.name}
-                  className="w-full rounded-xl shadow-2xl"
+                  className="w-full max-h-[70vh] object-contain rounded-xl shadow-2xl"
                 />
               )}
             </div>

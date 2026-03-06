@@ -379,8 +379,11 @@ The number of colours filter remains visible and usable in both modes.
 - Outer flex row removed; component is now just the details panel in its own card container
 - Error/empty states unchanged
 
+`src/App.jsx` — card image height cap:
+- Added `max-h-[70vh] object-contain` to the hero image so it never overflows the viewport height
+- Full 3-column layout is visible without scrolling on any screen size
+
 **41 tests passing.**
 
 **Next session should start with:**
 - Phase 2 items — "Open on Scryfall" link and colour identity pips on result card are the quickest wins
-- Manual browser testing recommended before starting Phase 2

@@ -167,24 +167,29 @@ describe('keywords', () => {
 });
 
 // ─── BUDGET ───────────────────────────────────────────────────────────────────
-// Budget uses usd<= (inclusive) so bracket labels like "≤$1" include exactly $1.
-// UI brackets: '' (Any) | '1' (Bulk) | '5' (Budget) | '15' (Mid) | '30' (Pricey)
+// Budget uses price bands — each bracket ID maps to a min/max range so results
+// actually feel like they belong in the chosen tier.
+// Bracket IDs: '' (Any) | 'bulk' | 'budget' | 'mid' | 'pricey' | 'expensive'
 
 describe('budget', () => {
-  test('budget "1" → usd<=1 (Bulk bracket)', () => {
-    expect(buildQuery({ ...BASE, budget: '1' })).toBe('is:commander usd<=1');
+  test('budget "bulk" → usd<=1 (single ceiling, no lower bound)', () => {
+    expect(buildQuery({ ...BASE, budget: 'bulk' })).toBe('is:commander usd<=1');
   });
 
-  test('budget "5" → usd<=5 (Budget bracket)', () => {
-    expect(buildQuery({ ...BASE, budget: '5' })).toBe('is:commander usd<=5');
+  test('budget "budget" → usd>1 usd<=5 (band $1–$5)', () => {
+    expect(buildQuery({ ...BASE, budget: 'budget' })).toBe('is:commander usd>1 usd<=5');
   });
 
-  test('budget "15" → usd<=15 (Mid bracket)', () => {
-    expect(buildQuery({ ...BASE, budget: '15' })).toBe('is:commander usd<=15');
+  test('budget "mid" → usd>5 usd<=15 (band $5–$15)', () => {
+    expect(buildQuery({ ...BASE, budget: 'mid' })).toBe('is:commander usd>5 usd<=15');
   });
 
-  test('budget "30" → usd<=30 (Pricey bracket)', () => {
-    expect(buildQuery({ ...BASE, budget: '30' })).toBe('is:commander usd<=30');
+  test('budget "pricey" → usd>15 usd<=30 (band $15–$30)', () => {
+    expect(buildQuery({ ...BASE, budget: 'pricey' })).toBe('is:commander usd>15 usd<=30');
+  });
+
+  test('budget "expensive" → usd>30 (floor only, no ceiling)', () => {
+    expect(buildQuery({ ...BASE, budget: 'expensive' })).toBe('is:commander usd>30');
   });
 
   test('budget empty string → no usd token', () => {
@@ -245,8 +250,8 @@ describe('combined filters', () => {
 
   test('colour + keyword + budget → all three tokens', () => {
     expect(
-      buildQuery({ ...BASE, colours: ['B'], keywords: ['Flying'], budget: '15' })
-    ).toBe('is:commander id<=B keyword:flying usd<=15');
+      buildQuery({ ...BASE, colours: ['B'], keywords: ['Flying'], budget: 'mid' })
+    ).toBe('is:commander id<=B keyword:flying usd>5 usd<=15');
   });
 
   test('all filters active (walkers excluded) → full query', () => {
@@ -256,9 +261,9 @@ describe('combined filters', () => {
       numColours: 2,
       creatureType: 'Vampire',
       keywords: ['Flying'],
-      budget: '30',
+      budget: 'pricey',
       planeswalker: false,
       partnerOnly: false,
-    })).toBe('is:commander id<=BR c=2 t:vampire keyword:flying usd<=30 -t:planeswalker');
+    })).toBe('is:commander id<=BR c=2 t:vampire keyword:flying usd>15 usd<=30 -t:planeswalker');
   });
 });

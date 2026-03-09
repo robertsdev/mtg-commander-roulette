@@ -15,7 +15,9 @@
 //                        colours must appear in WUBRG order for Scryfall to accept them
 //   t:vampire          — creature type filter (case-insensitive on Scryfall's end)
 //   keyword:flying     — one token per selected keyword ability
-//   usd<5              — budget filter (max price in USD)
+//   usd<=1             — budget filter (price ceiling in USD)
+//   usd>5 usd<=15      — budget range filter (price band, min AND max)
+//   usd>30             — budget filter (price floor only, for "Expensive" tier)
 //   t:planeswalker     — added if planeswalker toggle is ON
 //   keyword:partner    — added if partner toggle is ON
 //
@@ -26,7 +28,8 @@
 //     numColours: number | null, // e.g. 2 — exact colour count filter, or null for any
 //     creatureType: string,      // e.g. "Vampire" — empty string means no filter
 //     keywords: string[],        // e.g. ["Flying", "Haste"] — empty array means any
-//     budget: string,            // e.g. "5", "10", "25" — empty string means any price
+//     budget: string,            // bracket ID: 'bulk' | 'budget' | 'mid' | 'pricey' | 'expensive'
+//                                //   or '' for no price filter (Any)
 //     planeswalker: boolean,     // true = include planeswalker commanders in results
 //     partnerOnly: boolean,      // true = only commanders with the Partner keyword
 //   }
@@ -44,6 +47,17 @@
 // The canonical MTG colour order. Scryfall requires colours in this order
 // when using the id<= operator, so we sort selected colours against this list.
 const COLOUR_ORDER = ['W', 'U', 'B', 'R', 'G'];
+
+// Budget price bands — each bracket ID maps to an array of Scryfall price tokens.
+// Using two tokens (lower + upper bound) creates a range, so "Pricey" only returns
+// cards actually in the $15–$30 tier, not every card that happens to be under $30.
+const BUDGET_RANGES = {
+  bulk:      ['usd<=1'],          // free / true bulk
+  budget:    ['usd>1', 'usd<=5'], // budget staples
+  mid:       ['usd>5', 'usd<=15'],// mid-range
+  pricey:    ['usd>15', 'usd<=30'],// pricey staples
+  expensive: ['usd>30'],          // known expensive / reserved list cards
+};
 
 export function buildQuery(filters) {
   // Start with an array that will hold each piece of the query.
@@ -94,11 +108,12 @@ export function buildQuery(filters) {
   }
 
   // --- BUDGET FILTER ---
-  // usd<=N filters by current market price in USD. We use less-than-or-equal (<=) so
-  // the bracket labels are inclusive — "Bulk (≤$1)" includes cards priced exactly $1.
-  // Cards without a USD price listed are excluded by Scryfall when this token is present.
-  if (filters.budget && filters.budget !== '') {
-    tokens.push(`usd<=${filters.budget}`);
+  // Each bracket ID maps to one or two Scryfall price tokens in BUDGET_RANGES above.
+  // Two tokens create a band (e.g. usd>1 usd<=5) so "Budget" only returns cards
+  // actually in that tier — not everything that happens to be under the ceiling.
+  // Cards without a USD price are excluded by Scryfall whenever any usd token is present.
+  if (filters.budget && BUDGET_RANGES[filters.budget]) {
+    BUDGET_RANGES[filters.budget].forEach(t => tokens.push(t));
   }
 
   // --- PARTNER TOGGLE ---

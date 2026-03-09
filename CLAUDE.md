@@ -153,12 +153,19 @@ Two layout modes — App.jsx switches between them based on whether a card resul
 
 ### Budget Brackets
 
-Budget uses `usd<=` (inclusive, not strict `usd<`) so bracket labels match exactly:
-- Any (no filter)
-- Bulk ≤$1 → `usd<=1`
-- Budget ≤$5 → `usd<=5`
-- Mid ≤$15 → `usd<=15`
-- Pricey ≤$30 → `usd<=30`
+Budget uses price bands (not "up to X") so a result actually feels like it belongs in the chosen tier. Each bracket ID maps to a min/max range in `buildQuery.js`:
+
+| Bracket ID    | Label           | Scryfall tokens        |
+|---------------|-----------------|------------------------|
+| `''`          | Any             | (nothing)              |
+| `'bulk'`      | Bulk ≤$1        | `usd<=1`               |
+| `'budget'`    | Budget $1–$5    | `usd>1 usd<=5`         |
+| `'mid'`       | Mid $5–$15      | `usd>5 usd<=15`        |
+| `'pricey'`    | Pricey $15–$30  | `usd>15 usd<=30`       |
+| `'expensive'` | Expensive $30+  | `usd>30`               |
+
+The `budget` filter state stores the bracket ID string, not a price number.
+`DEFAULT_FILTERS.budget = ''` (Any — no filter) is unchanged.
 
 ### Number of Colours vs Colour Identity
 
@@ -387,3 +394,32 @@ The number of colours filter remains visible and usable in both modes.
 
 **Next session should start with:**
 - Phase 2 items — "Open on Scryfall" link and colour identity pips on result card are the quickest wins
+
+---
+
+### Session 6 — 2026-03-09 — Budget Price Bands
+
+**What was done:**
+
+Redesigned the budget filter from "up to X" ceilings to price bands, so results actually feel like they belong in the chosen tier.
+
+`src/utils/buildQuery.js` — budget filter reworked:
+- Added `BUDGET_RANGES` constant mapping bracket IDs to arrays of Scryfall price tokens
+- Each bracket now uses a min+max range (e.g. `usd>15 usd<=30` for Pricey) instead of a single ceiling
+- `'bulk'` uses a single ceiling `usd<=1` (no sensible lower bound)
+- `'expensive'` uses a single floor `usd>30` (no upper bound)
+- `budget` state value changed from a price number string (`'30'`) to a bracket ID (`'pricey'`)
+
+`src/components/FilterPanel.jsx` — updated bracket options:
+- New labels show the range: `Budget $1–$5`, `Mid $5–$15`, `Pricey $15–$30`
+- Added `Expensive $30+` bracket (was previously missing)
+
+`src/utils/buildQuery.test.js` — budget tests updated:
+- All budget tests now use bracket IDs and assert range token output
+- Added test for `'expensive'` bracket
+- Updated two combined-filter tests to use new bracket IDs and range assertions
+- **42 tests, all passing**
+
+**Decisions made:**
+- Price bands chosen over "up to X" because the app is discovery-focused — a user picking "Pricey" wants something that *feels* pricey, not a bulk rare that happens to be under $30
+- `DEFAULT_FILTERS.budget = ''` unchanged — "Any" still means no price filter

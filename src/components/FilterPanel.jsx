@@ -106,17 +106,19 @@ export default function FilterPanel({ filters, onChange, onSubmit, onReset, load
         placeholder="e.g. Flying"
       />
       {/* BUDGET BRACKET SELECTOR */}
-      {/* Pill buttons for max price. Empty string = no budget filter.
-          Values are inclusive (usd<=N) — "Bulk ≤$1" includes cards at exactly $1. */}
+      {/* Pill buttons for price tier. Empty string = no budget filter.
+          Each bracket is a price band — "Pricey" means $15–$30, not just "under $30".
+          This ensures the result actually feels like it belongs in the chosen tier. */}
       <div>
         <p className="text-sm text-gray-400 mb-2">Budget</p>
         <div className="flex gap-2 flex-wrap">
           {[
-            { value: '',   label: 'Any'       },
-            { value: '1',  label: 'Bulk ≤$1'  },
-            { value: '5',  label: 'Budget ≤$5' },
-            { value: '15', label: 'Mid ≤$15'  },
-            { value: '30', label: 'Pricey ≤$30' },
+            { value: '',          label: 'Any'           },
+            { value: 'bulk',      label: 'Bulk ≤$1'      },
+            { value: 'budget',    label: 'Budget $1–$5'  },
+            { value: 'mid',       label: 'Mid $5–$15'    },
+            { value: 'pricey',    label: 'Pricey $15–$30'},
+            { value: 'expensive', label: 'Expensive $30+'},
           ].map(({ value, label }) => {
             const isActive = filters.budget === value;
             return (

@@ -380,7 +380,7 @@ The number of colours filter remains visible and usable in both modes.
 - Error/empty states unchanged
 
 `src/App.jsx` — card image height cap:
-- Added `max-h-[70vh] object-contain` to the hero image so it never overflows the viewport height
+- Added `max-h-[90vh] object-contain` to the hero image so it never overflows the viewport height
 - Full 3-column layout is visible without scrolling on any screen size
 
 **41 tests passing.**

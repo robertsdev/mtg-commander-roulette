@@ -18,6 +18,8 @@
 //   usd<=1             — budget filter (price ceiling in USD)
 //   usd>5 usd<=15      — budget range filter (price band, min AND max)
 //   usd>30             — budget filter (price floor only, for "Expensive" tier)
+//   -is:foil           — excludes foil-only printings (default / standard mode)
+//   is:foil            — returns only foil printings (foil-only mode)
 //   t:planeswalker     — added if planeswalker toggle is ON
 //   keyword:partner    — added if partner toggle is ON
 //
@@ -30,6 +32,9 @@
 //     keywords: string[],        // e.g. ["Flying", "Haste"] — empty array means any
 //     budget: string,            // bracket ID: 'bulk' | 'budget' | 'mid' | 'pricey' | 'expensive'
 //                                //   or '' for no price filter (Any)
+//     printType: string,         // 'standard' (default) → -is:foil (exclude foil-only printings)
+//                                // 'include-foils'      → no print filter (all printings)
+//                                // 'foil-only'          → is:foil (foil printings only)
 //     planeswalker: boolean,     // true = include planeswalker commanders in results
 //     partnerOnly: boolean,      // true = only commanders with the Partner keyword
 //   }
@@ -123,6 +128,21 @@ export function buildQuery(filters) {
   if (filters.partnerOnly) {
     tokens.push('keyword:partner');
   }
+
+  // --- PRINT TYPE FILTER ---
+  // Controls whether foil-only printings are included in results.
+  // 'standard' (default): add -is:foil so only standard non-foil printings are returned.
+  //   This prevents foil-only promos/special editions from appearing when the user
+  //   is looking for a regular card to build around.
+  // 'include-foils': no token added — Scryfall returns all printings.
+  // 'foil-only': add is:foil to restrict results to foil-only printings.
+  // If printType is missing/undefined, treat it as 'standard' (safe default).
+  if (!filters.printType || filters.printType === 'standard') {
+    tokens.push('-is:foil');
+  } else if (filters.printType === 'foil-only') {
+    tokens.push('is:foil');
+  }
+  // 'include-foils' → no token needed
 
   // --- PLANESWALKER TOGGLE ---
   // is:commander includes planeswalker commanders (e.g. Teferi, Temporal Pilgrim).

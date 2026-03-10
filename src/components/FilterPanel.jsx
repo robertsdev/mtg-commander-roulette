@@ -142,6 +142,39 @@ export default function FilterPanel({ filters, onChange, onSubmit, onReset, load
           })}
         </div>
       </div>
+      {/* PRINT TYPE SELECTOR */}
+      {/* Controls whether foil-only printings are included.
+          'standard' (default) adds -is:foil so results are normal printings.
+          'include-foils' removes the filter — all printings come through.
+          'foil-only' adds is:foil to restrict to foil-exclusive printings. */}
+      <div>
+        <p className="text-sm text-gray-400 mb-2">Print type</p>
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { value: 'standard',      label: 'Standard only' },
+            { value: 'include-foils', label: 'Include foils' },
+            { value: 'foil-only',     label: 'Foil only'     },
+          ].map(({ value, label }) => {
+            const isActive = filters.printType === value;
+            return (
+              <button
+                key={value}
+                onClick={() => onChange({ printType: value })}
+                aria-pressed={isActive}
+                className={[
+                  'px-3 py-1 rounded-full text-sm font-medium border transition-colors duration-100',
+                  isActive
+                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                    : 'bg-gray-800 border-gray-600 text-gray-400 hover:text-white hover:border-gray-400',
+                ].join(' ')}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* PLANESWALKER TOGGLE */}
       {/* Off by default — buildQuery adds -t:planeswalker when this is false.
           Turning it on allows planeswalker commanders (e.g. Teferi) through. */}

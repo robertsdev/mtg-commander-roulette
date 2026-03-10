@@ -70,10 +70,20 @@ export default function CommanderCard({ card, error, onTryAgain }) {
     card.flavor_text ??
     card.card_faces?.[0]?.flavor_text;
 
-  // Format price: show "$X.XX" or "Price unknown" if Scryfall has no data.
-  const price = card.prices?.usd
-    ? `$${parseFloat(card.prices.usd).toFixed(2)}`
-    : 'Price unknown';
+  // Format price using a fallback chain.
+  // A card can have both prices.usd AND prices.usd_etched simultaneously (e.g. a card
+  // with both normal and etched-foil printings) — always prefer prices.usd if present.
+  // Some cards are foil-only or etched-only, so usd is null but usd_foil/usd_etched isn't.
+  let price;
+  if (card.prices?.usd) {
+    price = `$${parseFloat(card.prices.usd).toFixed(2)}`;
+  } else if (card.prices?.usd_foil) {
+    price = `$${parseFloat(card.prices.usd_foil).toFixed(2)} (foil only)`;
+  } else if (card.prices?.usd_etched) {
+    price = `$${parseFloat(card.prices.usd_etched).toFixed(2)} (etched only)`;
+  } else {
+    price = 'Price unavailable';
+  }
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-xl p-5 flex flex-col gap-4">

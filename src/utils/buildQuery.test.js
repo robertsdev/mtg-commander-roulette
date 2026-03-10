@@ -12,11 +12,11 @@ import { describe, test, expect } from 'vitest';
 import { buildQuery } from './buildQuery.js';
 
 // BASE is the test fixture — a neutral "nothing active" state used to test one
-// filter at a time. planeswalker is set to true here so that tests for OTHER
-// filters don't get -t:planeswalker noise in their expected strings.
+// filter at a time. Several fields are set to non-default values for isolation:
+//   planeswalker: true        — avoids -t:planeswalker noise; real default is false
+//   printType: 'include-foils' — avoids -is:foil noise; real default is 'standard'
 //
-// The REAL default (planeswalker: false → excludes walkers) is tested explicitly
-// in the planeswalker section below.
+// The real-world defaults (both false/standard) are tested explicitly below.
 const BASE = {
   colours: [],
   colourMode: 'within',
@@ -24,7 +24,8 @@ const BASE = {
   creatureType: '',
   keywords: [],
   budget: '',
-  planeswalker: true,   // neutral for test isolation — real default is false
+  printType: 'include-foils', // neutral for test isolation — real default is 'standard'
+  planeswalker: true,         // neutral for test isolation — real default is false
   partnerOnly: false,
 };
 
@@ -35,10 +36,11 @@ describe('baseline', () => {
     expect(buildQuery(BASE)).toBe('is:commander');
   });
 
-  test('real-world defaults (planeswalker: false) → is:commander -t:planeswalker', () => {
+  test('real-world defaults (standard + no walkers) → is:commander -is:foil -t:planeswalker', () => {
     // This is what DEFAULT_FILTERS in App.jsx actually produces on first load.
-    // Planeswalkers are excluded unless the user opts in via the toggle.
-    expect(buildQuery({ ...BASE, planeswalker: false })).toBe('is:commander -t:planeswalker');
+    // Standard printings only, planeswalkers excluded — both are opt-in to change.
+    expect(buildQuery({ ...BASE, printType: 'standard', planeswalker: false }))
+      .toBe('is:commander -is:foil -t:planeswalker');
   });
 });
 
@@ -227,6 +229,33 @@ describe('partner toggle', () => {
   });
 });
 
+// ─── PRINT TYPE ───────────────────────────────────────────────────────────────
+
+describe('print type', () => {
+  test('printType "standard" → -is:foil (exclude foil-only printings)', () => {
+    expect(buildQuery({ ...BASE, printType: 'standard' })).toBe('is:commander -is:foil');
+  });
+
+  test('printType "include-foils" → no print token (all printings)', () => {
+    expect(buildQuery({ ...BASE, printType: 'include-foils' })).toBe('is:commander');
+  });
+
+  test('printType "foil-only" → is:foil', () => {
+    expect(buildQuery({ ...BASE, printType: 'foil-only' })).toBe('is:commander is:foil');
+  });
+
+  test('printType missing/undefined → defaults to -is:foil (same as standard)', () => {
+    // Safe fallback: if printType is somehow absent, standard behaviour applies
+    const { printType, ...withoutPrintType } = BASE;
+    expect(buildQuery(withoutPrintType)).toBe('is:commander -is:foil');
+  });
+
+  test('printType "standard" + partnerOnly → partner before -is:foil', () => {
+    expect(buildQuery({ ...BASE, printType: 'standard', partnerOnly: true }))
+      .toBe('is:commander keyword:partner -is:foil');
+  });
+});
+
 // ─── COMBINED ─────────────────────────────────────────────────────────────────
 
 describe('combined filters', () => {
@@ -254,7 +283,7 @@ describe('combined filters', () => {
     ).toBe('is:commander id<=B keyword:flying usd>5 usd<=15');
   });
 
-  test('all filters active (walkers excluded) → full query', () => {
+  test('all filters active (standard + walkers excluded) → full query', () => {
     expect(buildQuery({
       colours: ['B', 'R'],
       colourMode: 'within',
@@ -262,8 +291,9 @@ describe('combined filters', () => {
       creatureType: 'Vampire',
       keywords: ['Flying'],
       budget: 'pricey',
+      printType: 'standard',
       planeswalker: false,
       partnerOnly: false,
-    })).toBe('is:commander id<=BR c=2 t:vampire keyword:flying usd>15 usd<=30 -t:planeswalker');
+    })).toBe('is:commander id<=BR c=2 t:vampire keyword:flying usd>15 usd<=30 -is:foil -t:planeswalker');
   });
 });

@@ -33,7 +33,10 @@ const DEFAULT_FILTERS = {
   numColours: null,     // Exact number of colours (1–5), or null for any
   creatureType: '',     // Single creature type string, or empty for any
   keywords: [],         // Array of keyword abilities, or empty for any
-  budget: '',           // Max USD price as a string, or empty for any
+  budget: '',           // Budget bracket ID, or empty for any price
+  printType: 'standard',// 'standard' → -is:foil (default, excludes foil-only printings)
+                        // 'include-foils' → no print filter
+                        // 'foil-only' → is:foil
   planeswalker: false,  // Whether to allow planeswalker commanders
   partnerOnly: false,   // Whether to restrict to partner commanders only
 };

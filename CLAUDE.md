@@ -167,6 +167,28 @@ Budget uses price bands (not "up to X") so a result actually feels like it belon
 The `budget` filter state stores the bracket ID string, not a price number.
 `DEFAULT_FILTERS.budget = ''` (Any — no filter) is unchanged.
 
+### Print Type Filter
+
+Controls whether foil-only printings appear in results. Implemented as a `printType` string in filter state, mapped to Scryfall tokens in `buildQuery.js`:
+
+| Value            | Label          | Scryfall token |
+|------------------|----------------|----------------|
+| `'standard'`     | Standard only  | `-is:foil`     |
+| `'include-foils'`| Include foils  | (none)         |
+| `'foil-only'`    | Foil only      | `is:foil`      |
+
+Default is `'standard'` — foil-only printings are excluded so users get normal cards. If `printType` is missing/undefined, `buildQuery` treats it as `'standard'` for safety.
+
+### Price Display Fallback
+
+`CommanderCard.jsx` uses a fallback chain for the price field:
+1. `prices.usd` → `$X.XX` (standard printing price)
+2. `prices.usd_foil` → `$X.XX (foil only)` (foil-exclusive printings)
+3. `prices.usd_etched` → `$X.XX (etched only)` (etched-foil exclusive)
+4. All null → `"Price unavailable"`
+
+A card can have both `prices.usd` and `prices.usd_etched` populated at the same time (e.g. a card with both regular and etched-foil printings) — `prices.usd` is always preferred and checked first.
+
 ### Number of Colours vs Colour Identity
 
 The "Number of colours" selector is hidden when any colour identity pip is selected.
@@ -423,3 +445,44 @@ Redesigned the budget filter from "up to X" ceilings to price bands, so results 
 **Decisions made:**
 - Price bands chosen over "up to X" because the app is discovery-focused — a user picking "Pricey" wants something that *feels* pricey, not a bulk rare that happens to be under $30
 - `DEFAULT_FILTERS.budget = ''` unchanged — "Any" still means no price filter
+
+---
+
+### Session 7 — 2026-03-10 — Print Type Filter + Price Fallback
+
+**What was done:**
+
+`src/utils/buildQuery.js` — print type support:
+- Added `printType` parameter to the filter object
+- `'standard'` (default) → pushes `-is:foil` so foil-only printings are excluded
+- `'include-foils'` → no token (all printings returned)
+- `'foil-only'` → pushes `is:foil`
+- Missing/undefined `printType` treated as `'standard'` for safety
+- Token position: after `keyword:partner`, before `-t:planeswalker`
+
+`src/App.jsx` — state update:
+- Added `printType: 'standard'` to `DEFAULT_FILTERS`
+- Flows automatically to `FilterPanel` (via `filters` prop) and `buildQuery` (via `buildQuery(filters)`) — no other wiring needed
+
+`src/components/FilterPanel.jsx` — Print Type selector:
+- Three pill buttons (same style as budget brackets): Standard only / Include foils / Foil only
+- Positioned between budget brackets and planeswalker toggle
+- No deselect-to-default behaviour — one option always active (clicking active has no effect)
+
+`src/components/CommanderCard.jsx` — price fallback chain:
+- `prices.usd` → `$X.XX`
+- `prices.usd_foil` → `$X.XX (foil only)`
+- `prices.usd_etched` → `$X.XX (etched only)`
+- All null → `"Price unavailable"` (was "Price unknown")
+
+`src/utils/buildQuery.test.js` — tests updated:
+- BASE fixture updated: added `printType: 'include-foils'` for test isolation
+- Real-world defaults test updated to include both `printType: 'standard'` and `planeswalker: false`
+- Added `describe('print type', ...)` section — 5 new tests
+- All-filters combined test updated to include `printType: 'standard'`
+- **47 tests, all passing**
+
+**Decisions made:**
+- `-is:foil` added to base query by default — foil-only printings are uncommon, hard to find physically, and often have no `prices.usd` value (causing "Price unavailable"), making them confusing for most users
+- Print type selector has no deselect — one of the three options is always active, unlike budget which can be cleared to "Any"
+- `prices.usd` is always preferred over `prices.usd_etched` even though both can be non-null simultaneously (a card with both standard and etched printings)

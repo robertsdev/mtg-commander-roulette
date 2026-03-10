@@ -91,6 +91,12 @@ is:commander id<=BR t:vampire keyword:flying usd<20
 - [ ] "Open on Scryfall" link on result
 - [ ] Mobile-optimised layout
 - [ ] Shareable URL with filters encoded in query params
+- [ ] Convert planeswalker filter to a three-way pill selector matching the Print Type pattern:
+  - No planeswalkers (default) → `-t:planeswalker`
+  - Include → no token
+  - Must be planeswalker → `t:planeswalker`
+  - Note: `planeswalker` is currently a boolean in `DEFAULT_FILTERS` — change to a string
+    (`'exclude'` | `'include'` | `'only'`) when implementing, and update `buildQuery.js` + tests
 
 ---
 
